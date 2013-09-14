@@ -1,0 +1,11 @@
+package
+{
+	import flash.display.Sprite;
+
+	public class Game extends Sprite
+	{
+		public var i:int = 0;
+		public var str:String = "adfµÄ»ý·Ö¿¨";
+		
+	}
+}

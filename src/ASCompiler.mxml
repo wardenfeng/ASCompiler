@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   width="350"
+					   height="200"
+					   backgroundColor="#969664"
+					   showStatusBar="false"
+					   creationComplete="windowedapplication1_creationCompleteHandler(event)"
+					   >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Label id="showtxt"
+			 text="拖入需要编译的文件"
+			 fontSize="36"
+			 fontFamily="华文中宋"
+			 height="44"
+			 textAlign="center"
+			 verticalAlign="middle"
+			 horizontalCenter="0"
+			 verticalCenter="0"
+			 left="0"
+			 right="0"/>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import utils.DragFileIn;
+			import utils.DragFileInEvent;
+			
+			private var filepaths : Array;
+			
+			/**
+			 * 初始化编译文件
+			 * 把以下文件名改回来
+			 * playerglobal.swc
+			 * flex-config.xml
+			 **/
+			private function initComplileFiles() : void
+			{
+				var sourceFile : File;
+				var destination : File;
+				//把文件从按照目录拷贝到存储目录
+				sourceFile = File.applicationDirectory;
+				sourceFile = sourceFile.resolvePath("compilefiles");
+				destination = File.applicationStorageDirectory;
+				destination = destination.resolvePath("compilefiles");
+				if(destination.exists == false)
+				{
+					sourceFile.copyTo(destination, true);
+					//修改文件名字
+					sourceFile = File.applicationStorageDirectory;
+					sourceFile = sourceFile.resolvePath("compilefiles/frameworks/libs/player/9/playerglobal.swcc");
+					destination = File.applicationStorageDirectory;
+					destination = destination.resolvePath("compilefiles/frameworks/libs/player/9/playerglobal.swc");
+					sourceFile.copyTo(destination, true);
+					sourceFile.deleteFile();
+					
+					sourceFile = File.applicationStorageDirectory;
+					sourceFile = sourceFile.resolvePath("compilefiles/frameworks/flex-config.xmlc");
+					destination = File.applicationStorageDirectory;
+					destination = destination.resolvePath("compilefiles/frameworks/flex-config.xml");
+					sourceFile.copyTo(destination, true);
+					sourceFile.deleteFile();
+					
+					sourceFile = File.applicationStorageDirectory;
+					sourceFile = sourceFile.resolvePath("compilefiles/Game");
+					destination = File.applicationStorageDirectory;
+					destination = destination.resolvePath("compilefiles/Game.as");
+					sourceFile.copyTo(destination, true);
+					sourceFile.deleteFile();
+				}
+			}
+			
+			/**
+			 * 编译as文件为swf文件
+			 **/
+			public function complileFile() : void
+			{
+				if(filepaths.length == 0)
+				{
+					showtxt.text = "拖入需要编译的文件";
+					return;
+				}
+				else
+				{
+					showtxt.text = "还剩" + filepaths.length + "个文件";
+				}
+				var filepath : String = filepaths.pop() as String;
+				
+				/*当 autoExit 为 true（默认值）时，如果关闭了所有窗口，则应用程序将终止。调度 exiting 和 exit 事件。如果 autoExit 为 false，则必须调用 NativeApplication.nativeApplication.exit() 才能终止应用程序。*/
+				NativeApplication.nativeApplication.autoExit = true;
+				//调用的文件名称
+				var file : File;
+				file = File.applicationStorageDirectory;
+				file = file.resolvePath("compilefiles/bin/mxmlc.exe");
+				
+				var nativeProcessStartupInfo : NativeProcessStartupInfo;
+				nativeProcessStartupInfo = new NativeProcessStartupInfo();
+				nativeProcessStartupInfo.executable = file;
+				
+				var processArgs : Vector.<String> = new Vector.<String>();
+				processArgs[0] = filepath;
+				nativeProcessStartupInfo.arguments = processArgs;
+				
+				var process : NativeProcess = new NativeProcess();
+				process.start(nativeProcessStartupInfo);
+				
+				process.addEventListener(NativeProcessExitEvent.EXIT, complileNext);
+				process.addEventListener(IOErrorEvent.STANDARD_OUTPUT_IO_ERROR, complileNext);
+				process.addEventListener(IOErrorEvent.STANDARD_ERROR_IO_ERROR, complileNext);
+			}
+			
+			public function complileNext(event : NativeProcessExitEvent) : void
+			{
+				complileFile();
+			}
+			
+			protected function windowedapplication1_creationCompleteHandler(event : FlexEvent) : void
+			{
+				// TODO Auto-generated method stub
+				initComplileFiles();
+				
+				var dragFileIn : DragFileIn = new DragFileIn(this);
+				dragFileIn.addEventListener(DragFileInEvent.DRAG_FILES, onDragFiles);
+			}
+			
+			private function onDragFiles(event : DragFileInEvent) : void
+			{
+				filepaths = event.data as Array;
+				complileFile();
+			}
+		]]>
+	</fx:Script>
+</s:WindowedApplication>
